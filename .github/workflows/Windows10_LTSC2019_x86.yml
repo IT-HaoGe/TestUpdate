@@ -51,6 +51,11 @@ jobs:
         :: 替换W10UI.cmd
         copy D:\a\UpdateWinISO\UpdateWinISO\mycmd\W10UI.cmd D:\a\UpdateWinISO\Win_ISO_Patching_Scripts\W10UI.cmd /Y
 
+
+        :: 替换 Scripts 文件夹
+        :: 使用 xcopy 进行文件夹复制
+        xcopy D:\a\UpdateWinISO\UpdateWinISO\Scripts D:\a\UpdateWinISO\Win_ISO_Patching_Scripts\Scripts /E /Y /I
+
         :: 切换至Win_ISO_Patching_Scripts根目录 D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
         cd /d D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
 
@@ -76,39 +81,34 @@ jobs:
       run: |
         move "..\Win_ISO_Patching_Scripts\*.iso" .
 
-    # 【新增】计算 CRC32 校验值
+    # 计算 CRC32 校验值 (转小写)
     - name: Calculate CRC32
       shell: pwsh
       run: |
-        # 获取 ISO 文件对象
         $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
         
         if (-not $iso) { 
             Write-Error "Error: No ISO file found." 
             exit 1 
         }
-
         Write-Host "Target ISO: $($iso.Name)"
 
-        # 使用 7-Zip 计算 CRC32 (因为 Windows 自带命令不方便算 CRC32)
-        # 7z 输出格式通常包含: "CRC32  for data:              85988229"
-        $7zOutput = 7z h -scrcCRC32 $iso.Name
+        # 1. 计算 Hash (加上 | Out-String 解决数组报错)
+        $7zOutput = 7z h -scrcCRC32 $iso.Name | Out-String
 
-        # 使用正则提取 8位 16进制 Hash 值
+        # 2. 提取并转为小写
         if ($7zOutput -match 'for data:\s+([0-9A-F]{8})') {
-            $crc = $matches[1]
+            $crc = $matches[1].ToLower()
+            
             Write-Host "Calculated CRC32: $crc"
-            # 写入环境变量，供后续步骤使用
             "CRC32=$crc" | Out-File -FilePath $env:GITHUB_ENV -Append
         } else {
             Write-Error "Error: Failed to parse CRC32 from 7-Zip output."
-            Write-Host $7zOutput
             exit 1
         }
 
-    # 上传镜像 (使用动态生成的名称)
+    # 上传镜像 (直接上传 Artifact)
     - uses: actions/upload-artifact@v4
       with:
-        # 使用你指定的格式，并引用上面计算出的 CRC32
         name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"
