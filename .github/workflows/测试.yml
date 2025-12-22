@@ -1,0 +1,88 @@
+name: Test_Workflow_Logic # 临时改名，方便区分
+
+on: workflow_dispatch
+
+env:
+  Build_VERSION: '17763.8146'
+  FILE_NAME: Windows10_LTSC2019_x86
+
+jobs:
+  Windows10_LTSC2019_x86:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Checkout repository of Win_ISO_Patching_Scripts
+      run: |
+        cd ..
+        git clone https://github.com/adavak/Win_ISO_Patching_Scripts.git
+
+    # ========================================================
+    # 【测试核心】：跳过下载和更新，直接生成一个假 ISO
+    # ========================================================
+    
+    # 1. 注释掉下载真实镜像
+    # - name: download ISO
+    #   ... (此处原代码被注释) ...
+
+    # 2. 注释掉集成更新
+    # - name: Update WinISO
+    #   ... (此处原代码被注释) ...
+    
+    # 3. 注释掉删除母盘
+    # - name: del MasterISO
+    #   ... (此处原代码被注释) ...
+
+    # 4. 【新增】生成一个假的 ISO 文件用于测试流程
+    - name: Generate Dummy ISO for Testing
+      shell: cmd
+      run: |
+        echo "This is a fake ISO file for testing logic" > "..\Win_ISO_Patching_Scripts\Win10_Fake_Result.iso"
+        echo Created fake ISO at ..\Win_ISO_Patching_Scripts\Win10_Fake_Result.iso
+
+    # ========================================================
+    # 下面是你需要验证的逻辑 (完全保持原样)
+    # ========================================================
+
+    # 移动 ISO 到当前工作目录
+    - name: Move ISO to Workspace
+      shell: cmd
+      run: |
+        move "..\Win_ISO_Patching_Scripts\*.iso" .
+
+    # 【修正版】计算 CRC32 校验值
+    - name: Calculate CRC32
+      shell: pwsh
+      run: |
+        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
+        
+        if (-not $iso) { 
+            Write-Error "Error: No ISO file found." 
+            exit 1 
+        }
+        Write-Host "Target ISO: $($iso.Name)"
+
+        # 重点修改：在命令末尾加上 "| Out-String"
+        # 这样 $7zOutput 就变成了单一大字符串，而不是数组
+        $7zOutput = 7z h -scrcCRC32 $iso.Name | Out-String
+
+        # 调试：打印输出看一眼 (可选)
+        # Write-Host "7z Output Debug: $7zOutput"
+
+        if ($7zOutput -match 'for data:\s+([0-9A-F]{8})') {
+            $crc = $matches[1]
+            Write-Host "Calculated CRC32: $crc"
+            "CRC32=$crc" | Out-File -FilePath $env:GITHUB_ENV -Append
+        } else {
+            Write-Error "Error: Failed to parse CRC32 from 7-Zip output."
+            exit 1
+        }
+
+    # 上传镜像
+    - uses: actions/upload-artifact@v4
+      with:
+        # 使用动态生成的名称
+        name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
+        path: "*.iso"
