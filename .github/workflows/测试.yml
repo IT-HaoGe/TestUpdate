@@ -52,7 +52,7 @@ jobs:
       run: |
         move "..\Win_ISO_Patching_Scripts\*.iso" .
 
-    # 【修正版】计算 CRC32 校验值
+    # 计算 CRC32 校验值 (转小写)
     - name: Calculate CRC32
       shell: pwsh
       run: |
@@ -64,15 +64,14 @@ jobs:
         }
         Write-Host "Target ISO: $($iso.Name)"
 
-        # 重点修改：在命令末尾加上 "| Out-String"
-        # 这样 $7zOutput 就变成了单一大字符串，而不是数组
+        # 1. 计算 Hash (加上 | Out-String 解决数组报错)
         $7zOutput = 7z h -scrcCRC32 $iso.Name | Out-String
 
-        # 调试：打印输出看一眼 (可选)
-        # Write-Host "7z Output Debug: $7zOutput"
-
+        # 2. 提取并转为小写
         if ($7zOutput -match 'for data:\s+([0-9A-F]{8})') {
-            $crc = $matches[1]
+            # 关键修改：加上 .ToLower() 将结果转为小写
+            $crc = $matches[1].ToLower()
+            
             Write-Host "Calculated CRC32: $crc"
             "CRC32=$crc" | Out-File -FilePath $env:GITHUB_ENV -Append
         } else {
@@ -80,9 +79,8 @@ jobs:
             exit 1
         }
 
-    # 上传镜像
+    # 上传镜像 (直接上传 Artifact)
     - uses: actions/upload-artifact@v4
       with:
-        # 使用动态生成的名称
         name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"
