@@ -20,17 +20,17 @@ jobs:
     # 检出Win_ISO_Patching_Scripts仓库
     - name: Checkout repository of Win_ISO_Patching_Scripts
       run: |
-        cd ..  #Directory: D:\a\UpdateWinISO
+        cd ..  #Directory: D:\a\TestUpdate
         git clone https://github.com/adavak/Win_ISO_Patching_Scripts.git
 
     # 下载镜像
     - name: download ISO
       shell: pwsh
       run: |
-        #ls     #Directory: D:\a\UpdateWinISO\UpdateWinISO(即仓库目录)
+        #ls     #Directory: D:\a\TestUpdate\TestUpdate(即仓库目录)
         
-        # 切换至Win_ISO_Patching_Scripts根目录 D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
-        cd ..  #Directory: D:\a\UpdateWinISO
+        # 切换至Win_ISO_Patching_Scripts根目录 D:\a\TestUpdate\Win_ISO_Patching_Scripts
+        cd ..  #Directory: D:\a\TestUpdate
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
@@ -46,18 +46,18 @@ jobs:
       shell: cmd
       run: |
         :: (可选)替换预设文件W10UI.ini
-        :: copy D:\a\UpdateWinISO\UpdateWinISO\myini\W10UI.ini D:\a\UpdateWinISO\Win_ISO_Patching_Scripts\W10UI.ini /Y
+        :: copy D:\a\TestUpdate\TestUpdate\myini\W10UI.ini D:\a\TestUpdate\Win_ISO_Patching_Scripts\W10UI.ini /Y
 
         :: 替换W10UI.cmd
-        copy D:\a\UpdateWinISO\UpdateWinISO\mycmd\W10UI.cmd D:\a\UpdateWinISO\Win_ISO_Patching_Scripts\W10UI.cmd /Y
+        copy D:\a\TestUpdate\TestUpdate\mycmd\W10UI.cmd D:\a\TestUpdate\Win_ISO_Patching_Scripts\W10UI.cmd /Y
 
 
         :: 替换 Scripts 文件夹
         :: 使用 xcopy 进行文件夹复制
-        xcopy D:\a\UpdateWinISO\UpdateWinISO\Scripts D:\a\UpdateWinISO\Win_ISO_Patching_Scripts\Scripts /E /Y /I
+        xcopy D:\a\TestUpdate\TestUpdate\Scripts D:\a\TestUpdate\Win_ISO_Patching_Scripts\Scripts /E /Y /I
 
-        :: 切换至Win_ISO_Patching_Scripts根目录 D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
-        cd /d D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
+        :: 切换至Win_ISO_Patching_Scripts根目录 D:\a\TestUpdate\Win_ISO_Patching_Scripts
+        cd /d D:\a\TestUpdate\Win_ISO_Patching_Scripts
 
         :: 开始集成更新
         Start.cmd
@@ -66,7 +66,7 @@ jobs:
     - name: del MasterISO
       shell: cmd
       run: |
-        cd /d D:\a\UpdateWinISO\Win_ISO_Patching_Scripts
+        cd /d D:\a\TestUpdate\Win_ISO_Patching_Scripts
         echo Before delete:
         dir *.iso
 
