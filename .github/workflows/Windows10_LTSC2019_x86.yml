@@ -106,7 +106,7 @@ jobs:
       run: |
         move "..\Win_ISO_Patching_Scripts\*.iso" .
 
-    # 计算 CRC32 校验值 (转小写)
+    # 计算 CRC32 校验值
     - name: Calculate CRC32
       shell: pwsh
       run: |
@@ -132,7 +132,7 @@ jobs:
             exit 1
         }
 
-    # 上传镜像 (直接上传 Artifact)
+    # 上传镜像到 Artifact
     - uses: actions/upload-artifact@v4
       with:
         name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
