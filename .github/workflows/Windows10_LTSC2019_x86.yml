@@ -4,7 +4,6 @@ on: workflow_dispatch
 #on: [push, pull_request]
 
 env:
-  Build_VERSION: '17763.8146'
   FILE_NAME: Windows10_LTSC2019_x86
 
 jobs:
@@ -16,6 +15,36 @@ jobs:
     # 检出本仓库
     - name: Checkout repository
       uses: actions/checkout@v5
+
+    # 读取版本号
+    - name: Read Version from PSD1
+      shell: pwsh
+      run: |
+        # --- 这里修改当前 Action 对应的 Key ---
+        $TargetKey = "LTSC2019"
+        # ------------------------------------
+
+        $Psd1File = "versions.psd1"
+        
+        if (-not (Test-Path $Psd1File)) {
+            Write-Error "Error: $Psd1File not found."
+            exit 1
+        }
+
+        $data = Import-PowerShellDataFile -Path $Psd1File
+        $ver = $data[$TargetKey]
+
+        if (-not $ver) {
+            Write-Error "Error: Key '$TargetKey' not found in $Psd1File"
+            exit 1
+        }
+
+        Write-Host "✅ Target Version: $ver"
+        "Build_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    # 检出Win_ISO_Patching_Scripts仓库
+    - name: Checkout repository of Win_ISO_Patching_Scripts
+      # ...
 
     # 检出Win_ISO_Patching_Scripts仓库
     - name: Checkout repository of Win_ISO_Patching_Scripts
