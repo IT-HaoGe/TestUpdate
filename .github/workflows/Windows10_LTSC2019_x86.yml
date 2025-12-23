@@ -16,48 +16,30 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v5
 
-    # 2. 读取 PSD1 并验证
+    # 读取版本号
     - name: Read Version from PSD1
       shell: pwsh
       run: |
-        # --- 在这里修改你想测试的 Key ---
+        # --- 这里修改当前 Action 对应的 Key ---
         $TargetKey = "LTSC2019"
-        $Psd1File  = "versions.psd1"
-        # ----------------------------
+        # ------------------------------------
 
-        # 1. 检查文件是否存在
-        if (-not (Test-Path $Psd1File)) {
-            Write-Error "❌ 错误: 找不到 $Psd1File 文件！请确认文件在仓库根目录。"
-            exit 1
-        }
-
-        # 2. 安全导入 PSD1 数据
-        try {
-            $data = Import-PowerShellDataFile -Path $Psd1File
-        } catch {
-            Write-Error "❌ PSD1 格式错误，请检查语法 (例如是否漏了引号或分号)。"
-            Write-Error $_
-            exit 1
-        }
-
-        # 3. 检查 Key 是否存在
-        if (-not $data.ContainsKey($TargetKey)) {
-            Write-Error "❌ 错误: 在 $Psd1File 中找不到键名 '$TargetKey'"
-            Write-Host "💡 当前文件包含的键: $($data.Keys -join ', ')"
-            exit 1
-        }
-
-        # 4. 获取值并打印
-        $ver = $data[$TargetKey]
+        $Psd1File = "versions.psd1"
         
-        Write-Host "----------------------------------------"
-        Write-Host "✅ 读取成功！"
-        Write-Host "📂 文件名: $Psd1File"
-        Write-Host "🔑 键名 (Key): $TargetKey"
-        Write-Host "🔢 版本号 (Value): $ver"
-        Write-Host "----------------------------------------"
+        if (-not (Test-Path $Psd1File)) {
+            Write-Error "Error: $Psd1File not found."
+            exit 1
+        }
 
-        # 5. 写入环境变量
+        $data = Import-PowerShellDataFile -Path $Psd1File
+        $ver = $data[$TargetKey]
+
+        if (-not $ver) {
+            Write-Error "Error: Key '$TargetKey' not found in $Psd1File"
+            exit 1
+        }
+
+        Write-Host "✅ Target Version: $ver"
         "Build_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     # 检出Win_ISO_Patching_Scripts仓库
