@@ -1,72 +1,71 @@
-name: Debug_Version_Config
+name: Debug_Version_Config (PSD1)
 
 on: workflow_dispatch
 
 jobs:
-  Check_Version_Logic:
+  Check_PSD1_Version:
     runs-on: windows-latest
 
     steps:
-    # 1. 检出仓库 (为了获取 versions.json)
+    # 1. 检出仓库 (必须步骤，否则找不到文件)
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. 读取 JSON 并写入环境变量
-    - name: Read and Set Version
+    # 2. 读取 PSD1 并验证
+    - name: Read Version from PSD1
       shell: pwsh
       run: |
-        # --- 这里设置你要测试的 Key ---
+        # --- 在这里修改你想测试的 Key ---
         $TargetKey = "LTSC2019"
+        $Psd1File  = "versions.psd1"
         # ----------------------------
 
-        $JsonFile = "versions.json"
-
-        # 检查文件是否存在
-        if (-not (Test-Path $JsonFile)) {
-            Write-Error "❌ 错误: 找不到 $JsonFile 文件！请检查文件名和位置。"
+        # 1. 检查文件是否存在
+        if (-not (Test-Path $Psd1File)) {
+            Write-Error "❌ 错误: 找不到 $Psd1File 文件！请确认文件在仓库根目录。"
             exit 1
         }
 
-        # 读取并解析 JSON
+        # 2. 安全导入 PSD1 数据
         try {
-            $config = Get-Content $JsonFile -Raw | ConvertFrom-Json
+            $data = Import-PowerShellDataFile -Path $Psd1File
         } catch {
-            Write-Error "❌ JSON 格式错误，请检查逗号或括号是否正确。"
+            Write-Error "❌ PSD1 格式错误，请检查语法 (例如是否漏了引号或分号)。"
             Write-Error $_
             exit 1
         }
 
-        # 获取对应 Key 的值
-        $ver = $config.$TargetKey
-
-        # 检查是否成功获取到值
-        if (-not $ver) {
-            Write-Error "❌ 错误: 在 JSON 中找不到键值 '$TargetKey'"
-            Write-Host "💡 当前 JSON 包含的所有键: $($config | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)"
+        # 3. 检查 Key 是否存在
+        if (-not $data.ContainsKey($TargetKey)) {
+            Write-Error "❌ 错误: 在 $Psd1File 中找不到键名 '$TargetKey'"
+            Write-Host "💡 当前文件包含的键: $($data.Keys -join ', ')"
             exit 1
         }
 
-        # 打印并写入环境
-        Write-Host "✅ 读取成功！Key: $TargetKey"
-        Write-Host "✅ 对应版本号: $ver"
+        # 4. 获取值并打印
+        $ver = $data[$TargetKey]
         
+        Write-Host "----------------------------------------"
+        Write-Host "✅ 读取成功！"
+        Write-Host "📂 文件名: $Psd1File"
+        Write-Host "🔑 键名 (Key): $TargetKey"
+        Write-Host "🔢 版本号 (Value): $ver"
+        Write-Host "----------------------------------------"
+
+        # 5. (可选) 写入环境变量，模拟真实场景
         "Build_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-    # 3. 最终验证 (模拟后续步骤读取变量)
+    # 3. 最终确认环境是否生效
     - name: Verify Environment Variable
       shell: cmd
       run: |
         @echo off
-        echo ---------------------------------------------------
-        echo [Check Result]
-        echo The environment variable Build_VERSION is:
-        echo.
-        echo     ${{ env.Build_VERSION }}
-        echo.
-        echo ---------------------------------------------------
-        if "${{ env.Build_VERSION }}" == "" (
+        echo [Final Check]
+        echo Build_VERSION is: %Build_VERSION%
+        
+        if "%Build_VERSION%" == "" (
             echo ❌ FAILED: Variable is empty!
             exit 1
         ) else (
-            echo ✅ SUCCESS: Variable works correctly!
+            echo ✅ SUCCESS: Environment variable set correctly.
         )
