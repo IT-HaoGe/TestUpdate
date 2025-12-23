@@ -1,10 +1,10 @@
-name: Windows10_LTSC2019_x86
+name: Win10_LTSC2019_x86
 
 on: workflow_dispatch
 #on: [push, pull_request]
 
 env:
-  FILE_NAME: Windows10_LTSC2019_x86
+  FILE_NAME: Win10_LTSC_2019_1809
 
 jobs:
   Windows10_LTSC2019_x86:
@@ -135,5 +135,5 @@ jobs:
     # 上传镜像到 Artifact
     - uses: actions/upload-artifact@v4
       with:
-        name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
+        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"
