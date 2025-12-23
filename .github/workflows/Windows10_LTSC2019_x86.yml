@@ -44,10 +44,6 @@ jobs:
 
     # 检出Win_ISO_Patching_Scripts仓库
     - name: Checkout repository of Win_ISO_Patching_Scripts
-      # ...
-
-    # 检出Win_ISO_Patching_Scripts仓库
-    - name: Checkout repository of Win_ISO_Patching_Scripts
       run: |
         cd ..  #Directory: D:\a\TestUpdate
         git clone https://github.com/adavak/Win_ISO_Patching_Scripts.git
