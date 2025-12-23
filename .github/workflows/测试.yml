@@ -1,86 +1,72 @@
-name: Test_Workflow_Logic # 临时改名，方便区分
+name: Debug_Version_Config
 
 on: workflow_dispatch
 
-env:
-  Build_VERSION: '17763.8146'
-  FILE_NAME: Windows10_LTSC2019_x86
-
 jobs:
-  Windows10_LTSC2019_x86:
+  Check_Version_Logic:
     runs-on: windows-latest
 
     steps:
+    # 1. 检出仓库 (为了获取 versions.json)
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
 
-    - name: Checkout repository of Win_ISO_Patching_Scripts
-      run: |
-        cd ..
-        git clone https://github.com/adavak/Win_ISO_Patching_Scripts.git
-
-    # ========================================================
-    # 【测试核心】：跳过下载和更新，直接生成一个假 ISO
-    # ========================================================
-    
-    # 1. 注释掉下载真实镜像
-    # - name: download ISO
-    #   ... (此处原代码被注释) ...
-
-    # 2. 注释掉集成更新
-    # - name: Update WinISO
-    #   ... (此处原代码被注释) ...
-    
-    # 3. 注释掉删除母盘
-    # - name: del MasterISO
-    #   ... (此处原代码被注释) ...
-
-    # 4. 【新增】生成一个假的 ISO 文件用于测试流程
-    - name: Generate Dummy ISO for Testing
-      shell: cmd
-      run: |
-        echo "This is a fake ISO file for testing logic" > "..\Win_ISO_Patching_Scripts\Win10_Fake_Result.iso"
-        echo Created fake ISO at ..\Win_ISO_Patching_Scripts\Win10_Fake_Result.iso
-
-    # ========================================================
-    # 下面是你需要验证的逻辑 (完全保持原样)
-    # ========================================================
-
-    # 移动 ISO 到当前工作目录
-    - name: Move ISO to Workspace
-      shell: cmd
-      run: |
-        move "..\Win_ISO_Patching_Scripts\*.iso" .
-
-    # 计算 CRC32 校验值 (转小写)
-    - name: Calculate CRC32
+    # 2. 读取 JSON 并写入环境变量
+    - name: Read and Set Version
       shell: pwsh
       run: |
-        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
-        
-        if (-not $iso) { 
-            Write-Error "Error: No ISO file found." 
-            exit 1 
-        }
-        Write-Host "Target ISO: $($iso.Name)"
+        # --- 这里设置你要测试的 Key ---
+        $TargetKey = "LTSC2019"
+        # ----------------------------
 
-        # 1. 计算 Hash (加上 | Out-String 解决数组报错)
-        $7zOutput = 7z h -scrcCRC32 $iso.Name | Out-String
+        $JsonFile = "versions.json"
 
-        # 2. 提取并转为小写
-        if ($7zOutput -match 'for data:\s+([0-9A-F]{8})') {
-            # 关键修改：加上 .ToLower() 将结果转为小写
-            $crc = $matches[1].ToLower()
-            
-            Write-Host "Calculated CRC32: $crc"
-            "CRC32=$crc" | Out-File -FilePath $env:GITHUB_ENV -Append
-        } else {
-            Write-Error "Error: Failed to parse CRC32 from 7-Zip output."
+        # 检查文件是否存在
+        if (-not (Test-Path $JsonFile)) {
+            Write-Error "❌ 错误: 找不到 $JsonFile 文件！请检查文件名和位置。"
             exit 1
         }
 
-    # 上传镜像 (直接上传 Artifact)
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Win10_LTSC_2019_1809_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
-        path: "*.iso"
+        # 读取并解析 JSON
+        try {
+            $config = Get-Content $JsonFile -Raw | ConvertFrom-Json
+        } catch {
+            Write-Error "❌ JSON 格式错误，请检查逗号或括号是否正确。"
+            Write-Error $_
+            exit 1
+        }
+
+        # 获取对应 Key 的值
+        $ver = $config.$TargetKey
+
+        # 检查是否成功获取到值
+        if (-not $ver) {
+            Write-Error "❌ 错误: 在 JSON 中找不到键值 '$TargetKey'"
+            Write-Host "💡 当前 JSON 包含的所有键: $($config | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)"
+            exit 1
+        }
+
+        # 打印并写入环境
+        Write-Host "✅ 读取成功！Key: $TargetKey"
+        Write-Host "✅ 对应版本号: $ver"
+        
+        "Build_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    # 3. 最终验证 (模拟后续步骤读取变量)
+    - name: Verify Environment Variable
+      shell: cmd
+      run: |
+        @echo off
+        echo ---------------------------------------------------
+        echo [Check Result]
+        echo The environment variable Build_VERSION is:
+        echo.
+        echo     ${{ env.Build_VERSION }}
+        echo.
+        echo ---------------------------------------------------
+        if "${{ env.Build_VERSION }}" == "" (
+            echo ❌ FAILED: Variable is empty!
+            exit 1
+        ) else (
+            echo ✅ SUCCESS: Variable works correctly!
+        )
