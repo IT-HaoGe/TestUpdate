@@ -59,12 +59,10 @@ jobs:
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
-        curl -L `
-          --fail `
-          --retry 5 `
-          --retry-delay 10 `
-          -o cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.iso `
-          https://drive.massgrave.dev/cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.iso
+        curl -L -o cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.001 https://github.com/yuanpeirong/UpdateWinISO/releases/download/Windows10ISO/cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.001
+        curl -L -o cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.002 https://github.com/yuanpeirong/UpdateWinISO/releases/download/Windows10ISO/cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.002
+        curl -L -o cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.003 https://github.com/yuanpeirong/UpdateWinISO/releases/download/Windows10ISO/cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.003
+        7z x cn_windows_10_enterprise_ltsc_2019_x64_dvd_9c09ff24.7z.001
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
