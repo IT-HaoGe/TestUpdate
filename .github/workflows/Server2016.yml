@@ -1,0 +1,144 @@
+name: Server2016
+
+on: workflow_dispatch
+#on: [push, pull_request]
+
+env:
+  FILE_NAME: Windows_Server_2016
+
+jobs:
+  Windows_Server_2016:
+    runs-on: windows-latest
+
+    steps:
+
+    # 检出本仓库
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    # 读取版本号
+    - name: Read Version from PSD1
+      shell: pwsh
+      run: |
+        # --- 这里修改当前 Action 对应的 Key ---
+        $TargetKey = "Server2016"
+        # ------------------------------------
+
+        $Psd1File = "versions.psd1"
+        
+        if (-not (Test-Path $Psd1File)) {
+            Write-Error "Error: $Psd1File not found."
+            exit 1
+        }
+
+        $data = Import-PowerShellDataFile -Path $Psd1File
+        $ver = $data[$TargetKey]
+
+        if (-not $ver) {
+            Write-Error "Error: Key '$TargetKey' not found in $Psd1File"
+            exit 1
+        }
+
+        Write-Host "✅ Target Version: $ver"
+        "Build_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    # 检出Win_ISO_Patching_Scripts仓库
+    - name: Checkout repository of Win_ISO_Patching_Scripts
+      run: |
+        cd ..  #Directory: D:\a\TestUpdate
+        git clone https://github.com/adavak/Win_ISO_Patching_Scripts.git
+
+    # 下载镜像
+    - name: download ISO
+      shell: pwsh
+      run: |
+        #ls     #Directory: D:\a\TestUpdate\TestUpdate(即仓库目录)
+        
+        # 切换至Win_ISO_Patching_Scripts根目录 D:\a\TestUpdate\Win_ISO_Patching_Scripts
+        cd ..  #Directory: D:\a\TestUpdate
+        cd Win_ISO_Patching_Scripts
+        
+        # 下载 ISO
+        curl -L `
+          -o cn_windows_server_2016_x64_dvd_9327743.iso `
+          https://archive.isdn.network/windows/cn_windows_server_2016_x64_dvd_9327743.iso
+
+        if (-not (Test-Path *.iso)) {
+            Write-Error "ISO download failed"
+            exit 1
+        }
+
+        # 查看结果
+        ls *.iso
+
+    # 集成更新
+    - name: Update WinISO
+      shell: cmd
+      run: |
+        :: (可选)替换预设文件W10UI.ini
+        :: copy D:\a\TestUpdate\TestUpdate\myini\W10UI.ini D:\a\TestUpdate\Win_ISO_Patching_Scripts\W10UI.ini /Y
+
+        :: 替换W10UI.cmd
+        copy D:\a\TestUpdate\TestUpdate\mycmd\W10UI.cmd D:\a\TestUpdate\Win_ISO_Patching_Scripts\W10UI.cmd /Y
+
+
+        :: 替换 Scripts 文件夹
+        :: 使用 xcopy 进行文件夹复制
+        xcopy D:\a\TestUpdate\TestUpdate\Scripts D:\a\TestUpdate\Win_ISO_Patching_Scripts\Scripts /E /Y /I
+
+        :: 切换至Win_ISO_Patching_Scripts根目录 D:\a\TestUpdate\Win_ISO_Patching_Scripts
+        cd /d D:\a\TestUpdate\Win_ISO_Patching_Scripts
+
+        :: 开始集成更新
+        Start.cmd
+
+    # 删除母盘 ISO
+    - name: del MasterISO
+      shell: cmd
+      run: |
+        cd /d D:\a\TestUpdate\Win_ISO_Patching_Scripts
+        echo Before delete:
+        dir *.iso
+
+        del /F /Q *_windows_*_dvd_*.iso
+
+        echo After delete:
+        dir *.iso
+
+    # 移动 ISO 到当前工作目录
+    - name: Move ISO to Workspace
+      shell: cmd
+      run: |
+        move "..\Win_ISO_Patching_Scripts\*.iso" .
+
+    # 计算 CRC32 校验值
+    - name: Calculate CRC32
+      shell: pwsh
+      run: |
+        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
+        
+        if (-not $iso) { 
+            Write-Error "Error: No ISO file found." 
+            exit 1 
+        }
+        Write-Host "Target ISO: $($iso.Name)"
+
+        # 1. 计算 Hash (加上 | Out-String 解决数组报错)
+        $7zOutput = 7z h -scrcCRC32 $iso.Name | Out-String
+
+        # 2. 提取并转为小写
+        if ($7zOutput -match 'for data:\s+([0-9A-F]{8})') {
+            $crc = $matches[1].ToLower()
+            
+            Write-Host "Calculated CRC32: $crc"
+            "CRC32=$crc" | Out-File -FilePath $env:GITHUB_ENV -Append
+        } else {
+            Write-Error "Error: Failed to parse CRC32 from 7-Zip output."
+            exit 1
+        }
+
+    # 上传镜像到 Artifact
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x64_zh-cn_ITHaoge_${{env.CRC32}}
+        path: "*.iso"
