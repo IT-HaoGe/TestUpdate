@@ -1,4 +1,4 @@
-name: Win10_LTSB2016_x64
+name: Win10_LTSB2016_x86
 
 on: workflow_dispatch
 #on: [push, pull_request]
@@ -7,7 +7,7 @@ env:
   FILE_NAME: Win10_LTSB_2016
 
 jobs:
-  Windows10_LTSB2016_x64:
+  Windows10_LTSB2016_x86:
     runs-on: windows-latest
 
     steps:
@@ -59,9 +59,9 @@ jobs:
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
-        curl -L -o cn_windows_10_enterprise_2016_ltsb_x64_dvd_9060409.7z.001 https://github.com/yuanpeirong/UpdateWinISO/releases/download/Windows10ISO/cn_windows_10_enterprise_2016_ltsb_x64_dvd_9060409.7z.001
-        curl -L -o cn_windows_10_enterprise_2016_ltsb_x64_dvd_9060409.7z.002 https://github.com/yuanpeirong/UpdateWinISO/releases/download/Windows10ISO/cn_windows_10_enterprise_2016_ltsb_x64_dvd_9060409.7z.002
-        7z x cn_windows_10_enterprise_2016_ltsb_x64_dvd_9060409.7z.001
+        curl -L `
+          -o cn_windows_10_enterprise_2016_ltsb_x86_dvd_9057089.iso `
+          https://archive.isdn.network/windows/cn_windows_10_enterprise_2016_ltsb_x86_dvd_9057089.iso
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
@@ -140,5 +140,5 @@ jobs:
     # 上传镜像到 Artifact
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x64_zh-cn_ITHaoge_${{env.CRC32}}
+        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"
