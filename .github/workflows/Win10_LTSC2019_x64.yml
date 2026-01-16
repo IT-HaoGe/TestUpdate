@@ -5,6 +5,7 @@ on: workflow_dispatch
 
 env:
   FILE_NAME: Win10_LTSC_2019_1809
+  SOURCE_ISO_MD5: 0d98f58465929ee524ce3aec0832a58b
 
 jobs:
   Windows10_LTSC2019_x64:
@@ -71,6 +72,33 @@ jobs:
 
         # 查看结果
         ls *.iso
+
+    # 校验下载的 ISO MD5
+    - name: Verify ISO MD5
+      shell: pwsh
+      run: |
+        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
+
+        if (-not $iso) {
+            Write-Error "Error: ISO file not found for MD5 verification."
+            exit 1
+        }
+
+        Write-Host "Target ISO: $($iso.Name)"
+
+        # 计算 MD5
+        $hash = (Get-FileHash -Path $iso.FullName -Algorithm MD5).Hash.ToLower()
+        $expected = "${{ env.SOURCE_ISO_MD5 }}".ToLower()
+
+        Write-Host "Calculated MD5 : $hash"
+        Write-Host "Expected   MD5 : $expected"
+
+        if ($hash -ne $expected) {
+            Write-Error "MD5 mismatch! ISO integrity check FAILED."
+            exit 1
+        }
+
+        Write-Host "✅ MD5 verification PASSED."
 
     # 集成更新
     - name: Update WinISO
