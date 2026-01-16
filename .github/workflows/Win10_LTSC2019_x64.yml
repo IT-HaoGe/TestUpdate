@@ -77,6 +77,9 @@ jobs:
     - name: Verify ISO MD5
       shell: pwsh
       run: |
+        # 切换到 ISO 所在目录
+        cd ..\Win_ISO_Patching_Scripts
+
         $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
 
         if (-not $iso) {
@@ -86,7 +89,6 @@ jobs:
 
         Write-Host "Target ISO: $($iso.Name)"
 
-        # 计算 MD5
         $hash = (Get-FileHash -Path $iso.FullName -Algorithm MD5).Hash.ToLower()
         $expected = "${{ env.SOURCE_ISO_MD5 }}".ToLower()
 
@@ -99,6 +101,7 @@ jobs:
         }
 
         Write-Host "✅ MD5 verification PASSED."
+
 
     # 集成更新
     - name: Update WinISO
