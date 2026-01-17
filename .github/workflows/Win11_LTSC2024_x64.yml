@@ -1,14 +1,14 @@
-name: Win10_LTSC2019_x86
+name: Win11_LTSC2024_x64
 
 on: workflow_dispatch
 #on: [push, pull_request]
 
 env:
-  FILE_NAME: Win10_LTSC_2019_1809
-  SOURCE_ISO_MD5: 69eb7b311b910fe49a5270c054edde09
+  FILE_NAME: Win11_(IoT)LTSC_2024
+  SOURCE_ISO_MD5: 38cfb988c48331296bf6ede59aa7fec9
 
 jobs:
-  Windows10_LTSC2019_x86:
+  Win11_LTSC2024_x64:
     runs-on: windows-latest
 
     steps:
@@ -22,7 +22,7 @@ jobs:
       shell: pwsh
       run: |
         # --- 这里修改当前 Action 对应的 Key ---
-        $TargetKey = "LTSC2019"
+        $TargetKey = "LTSC2024"
         # ------------------------------------
 
         $Psd1File = "versions.psd1"
@@ -60,9 +60,15 @@ jobs:
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
-        curl -L `
-          -o cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso `
-          https://archive.isdn.network/windows/cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso
+        curl -L -o LTSC_2024.7z.001 https://github.com/IT-HaoGe/TestUpdate/releases/download/LTSC_2024/LTSC_2024.7z.001
+        curl -L -o LTSC_2024.7z.002 https://github.com/IT-HaoGe/TestUpdate/releases/download/LTSC_2024/LTSC_2024.7z.002
+        curl -L -o LTSC_2024.7z.003 https://github.com/IT-HaoGe/TestUpdate/releases/download/LTSC_2024/LTSC_2024.7z.003
+        7z x LTSC_2024.7z.001
+
+        if (-not (Test-Path *.iso)) {
+            Write-Error "ISO download failed"
+            exit 1
+        }
 
         # 查看结果
         ls *.iso
@@ -165,5 +171,5 @@ jobs:
     # 上传镜像到 Artifact
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x86_zh-cn_ITHaoge_${{env.CRC32}}
+        name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x64_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"

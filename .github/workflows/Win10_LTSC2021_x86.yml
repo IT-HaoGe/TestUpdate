@@ -1,11 +1,11 @@
-name: Win10_LTSC2019_x86
+name: Win10_LTSC2021_x86
 
 on: workflow_dispatch
 #on: [push, pull_request]
 
 env:
-  FILE_NAME: Win10_LTSC_2019_1809
-  SOURCE_ISO_MD5: 69eb7b311b910fe49a5270c054edde09
+  FILE_NAME: Win10_IoT_LTSC_2021
+  SOURCE_ISO_MD5: e4f39f34193d30aff6a6c37c067eec69
 
 jobs:
   Windows10_LTSC2019_x86:
@@ -22,7 +22,7 @@ jobs:
       shell: pwsh
       run: |
         # --- 这里修改当前 Action 对应的 Key ---
-        $TargetKey = "LTSC2019"
+        $TargetKey = "LTSC2021"
         # ------------------------------------
 
         $Psd1File = "versions.psd1"
@@ -60,12 +60,14 @@ jobs:
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
-        curl -L `
-          -o cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso `
-          https://archive.isdn.network/windows/cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso
+        curl -L -o LTSC_2021_X86.7z.001 https://github.com/IT-HaoGe/TestUpdate/releases/download/LTSC_2021_X86/LTSC_2021_X86.7z.001
+        curl -L -o LTSC_2021_X86.7z.002 https://github.com/IT-HaoGe/TestUpdate/releases/download/LTSC_2021_X86/LTSC_2021_X86.7z.002
+        7z x LTSC_2021_X86.7z.001
 
-        # 查看结果
-        ls *.iso
+        if (-not (Test-Path *.iso)) {
+            Write-Error "ISO download failed"
+            exit 1
+        }
 
     # 校验下载的 ISO MD5
     - name: Verify ISO MD5

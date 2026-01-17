@@ -5,6 +5,7 @@ on: workflow_dispatch
 
 env:
   FILE_NAME: Windows_Server_2019
+  SOURCE_ISO_MD5: a801a65c0539140bb649b7c4ed329b0c
 
 jobs:
   Windows_Server_2019:
@@ -61,7 +62,7 @@ jobs:
         # 下载 ISO
         curl -L `
           -o zh-cn_windows_server_2019_x64_dvd_19d65722.iso `
-          https://trashbytes.net/dl/oH0X1wvL2GE4FFkng__q8-rldCM4hpz-Kksq1hRg2u5t0xJBmpWVDqU2bMzbGn58Qgm7fWtQOGLbrpZ9555_CgQFHS_XY0QHMI9pvERm-qp82xhFD3BHwRNwdyU63ChIok-Pz6GRQ6e6X44HAloeU-zZ?v=1768387390-mN3km%2BKfpalFdhTvYn3JUwsgHCsMCdmORq7ilMOUsU8%3D
+          https://download.testip.xyz/Windows/zh-cn_windows_server_2019_x64_dvd_19d65722.iso
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
@@ -70,6 +71,35 @@ jobs:
 
         # 查看结果
         ls *.iso
+
+    # 校验下载的 ISO MD5
+    - name: Verify ISO MD5
+      shell: pwsh
+      run: |
+        # 切换到 ISO 所在目录
+        cd ..\Win_ISO_Patching_Scripts
+
+        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
+
+        if (-not $iso) {
+            Write-Error "Error: ISO file not found for MD5 verification."
+            exit 1
+        }
+
+        Write-Host "Target ISO: $($iso.Name)"
+
+        $hash = (Get-FileHash -Path $iso.FullName -Algorithm MD5).Hash.ToLower()
+        $expected = "${{ env.SOURCE_ISO_MD5 }}".ToLower()
+
+        Write-Host "Calculated MD5 : $hash"
+        Write-Host "Expected   MD5 : $expected"
+
+        if ($hash -ne $expected) {
+            Write-Error "MD5 mismatch! ISO integrity check FAILED."
+            exit 1
+        }
+
+        Write-Host "✅ MD5 verification PASSED."
 
     # 集成更新
     - name: Update WinISO

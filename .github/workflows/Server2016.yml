@@ -5,6 +5,7 @@ on: workflow_dispatch
 
 env:
   FILE_NAME: Windows_Server_2016
+  SOURCE_ISO_MD5: 30d2d238836968a92c9243129c35320d
 
 jobs:
   Windows_Server_2016:
@@ -60,8 +61,8 @@ jobs:
         
         # 下载 ISO
         curl -L `
-          -o cn_windows_server_2016_x64_dvd_9327743.iso `
-          https://archive.isdn.network/windows/cn_windows_server_2016_x64_dvd_9327743.iso
+          -o cn_windows_server_2016_vl_x64_dvd_11636695.iso `
+          https://download.testip.xyz/Windows/cn_windows_server_2016_vl_x64_dvd_11636695.iso
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
@@ -70,6 +71,35 @@ jobs:
 
         # 查看结果
         ls *.iso
+
+    # 校验下载的 ISO MD5
+    - name: Verify ISO MD5
+      shell: pwsh
+      run: |
+        # 切换到 ISO 所在目录
+        cd ..\Win_ISO_Patching_Scripts
+
+        $iso = Get-ChildItem -Filter *.iso | Select-Object -First 1
+
+        if (-not $iso) {
+            Write-Error "Error: ISO file not found for MD5 verification."
+            exit 1
+        }
+
+        Write-Host "Target ISO: $($iso.Name)"
+
+        $hash = (Get-FileHash -Path $iso.FullName -Algorithm MD5).Hash.ToLower()
+        $expected = "${{ env.SOURCE_ISO_MD5 }}".ToLower()
+
+        Write-Host "Calculated MD5 : $hash"
+        Write-Host "Expected   MD5 : $expected"
+
+        if ($hash -ne $expected) {
+            Write-Error "MD5 mismatch! ISO integrity check FAILED."
+            exit 1
+        }
+
+        Write-Host "✅ MD5 verification PASSED."
 
     # 集成更新
     - name: Update WinISO
