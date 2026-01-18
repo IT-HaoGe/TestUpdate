@@ -131,7 +131,7 @@ jobs:
         echo Before delete:
         dir *.iso
 
-        del /F /Q *_windows_*_dvd_*.iso
+        del /F /Q *26100.1742*.iso
 
         echo After delete:
         dir *.iso
