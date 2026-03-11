@@ -62,7 +62,7 @@ jobs:
         # 下载 ISO
         curl -L `
           -o cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso `
-          https://archive.isdn.network/windows/cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso
+          https://ia801502.us.archive.org/0/items/windows-10-enterprise-ltsc-2019-simplified-chinese/cn_windows_10_enterprise_ltsc_2019_x86_dvd_1814dbab.iso
 
         # 查看结果
         ls *.iso
