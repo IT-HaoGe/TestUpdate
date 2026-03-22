@@ -168,7 +168,7 @@ jobs:
         }
 
     # 上传镜像到 Artifact
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: ${{env.FILE_NAME}}_${{env.Build_VERSION}}_x64_zh-cn_ITHaoge_${{env.CRC32}}
         path: "*.iso"
