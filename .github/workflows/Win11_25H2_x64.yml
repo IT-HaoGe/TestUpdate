@@ -63,7 +63,7 @@ jobs:
         curl -L -o Win11_24H2.7z.001 https://github.com/IT-HaoGe/TestUpdate/releases/download/24H2/Win11_24H2.7z.001
         curl -L -o Win11_24H2.7z.002 https://github.com/IT-HaoGe/TestUpdate/releases/download/24H2/Win11_24H2.7z.002
         curl -L -o Win11_24H2.7z.003 https://github.com/IT-HaoGe/TestUpdate/releases/download/24H2/Win11_24H2.7z.003
-        curl -L -o Win11_24H2.7z.003 https://github.com/IT-HaoGe/TestUpdate/releases/download/24H2/Win11_24H2.7z.004
+        curl -L -o Win11_24H2.7z.004 https://github.com/IT-HaoGe/TestUpdate/releases/download/24H2/Win11_24H2.7z.004
         7z x Win11_24H2.7z.001
 
         if (-not (Test-Path *.iso)) {
