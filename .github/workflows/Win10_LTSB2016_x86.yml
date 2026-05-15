@@ -61,7 +61,7 @@ jobs:
         # 下载 ISO
         curl -L `
           -o cn_windows_10_enterprise_2016_ltsb_x86_dvd_9057089.iso `
-          https://archive.isdn.network/windows/cn_windows_10_enterprise_2016_ltsb_x86_dvd_9057089.iso
+          https://coss.cc/d/iso/windows/windows-ltsb-2016/cn_windows_10_enterprise_2016_ltsb_x86_dvd_9057089.iso
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
