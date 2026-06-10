@@ -61,7 +61,7 @@ jobs:
         
         # 下载 ISO
         curl -L `
-          -o zh-cn_windows_server_2019_x64_dvd_19d65722 `
+          -o zh-cn_windows_server_2019_x64_dvd_19d65722.iso`
           https://download.testip.xyz/windows/zh-cn_windows_server_2019_x64_dvd_19d65722.iso
 
         if (-not (Test-Path *.iso)) {
