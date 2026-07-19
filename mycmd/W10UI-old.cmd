@@ -1,5 +1,5 @@
 @setlocal DisableDelayedExpansion
-@set uiv=v10.61
+@set uiv=v10.58r
 @echo off
 :: enable debug mode, you must also set target and repo (if updates are not beside the script)
 set _Debug=0
@@ -256,7 +256,6 @@ cd /d "!_work!"
 set psfcpp=0
 if exist "PSFExtractor.exe" set psfcpp=1&set _exe="!_work!\PSFExtractor.exe"
 if exist "bin\PSFExtractor.exe" set psfcpp=1&set _exe="!_work!\bin\PSFExtractor.exe"
-if /i %xOS%==amd64 if exist "bin\bin64\PSFExtractor.exe" set psfcpp=1&set _exe="!_work!\bin\bin64\PSFExtractor.exe"
 if not defined _sdr set psfcpp=0
 set _reMSU=0
 set psfwim=0
@@ -559,6 +558,8 @@ goto :main2board
 goto :main0board
 
 :main1board
+set _bit=%arch%
+if /i %arch%==arm64 set _bit=arm
 call :counter
 set "brep=!repo!"
 if %_sum%==0 set "repo="
@@ -759,7 +760,6 @@ if %_offdu%==1 if not exist "!_cabdir!\du\" (
   mkdir "!_cabdir!\du" %_Nul3%
   for %%i in (!isoupdate!) do expand.exe -r -f:* "!repo!\%%~i" "!_cabdir!\du" %_Nul1%
   if %_build% geq 26100 if exist "!mountdir!\Windows\System32\ServicingCommon.dll" if not exist "!_cabdir!\du\ServicingCommon.dll" copy /y "!mountdir!\Windows\System32\ServicingCommon.dll" "!_cabdir!\du\" %_Nul3%
-  if %_build% geq 26100 if exist "!mountdir!\Windows\System32\migwiz\unbcl.dll" if not exist "!_cabdir!\du\unbcl.dll" copy /y "!mountdir!\Windows\System32\migwiz\unbcl.dll" "!_cabdir!\du\" %_Nul3%
   if exist "!mountdir!\Windows\Servicing\Packages\WinPE-Setup-Package~*.mum" (
   if exist "!mountdir!\sources\setup.exe" if exist "!_cabdir!\du\setup.exe" del /f /q "!_cabdir!\du\setup.exe" %_Nul3%
   if %_build% geq 26052 if exist "!mountdir!\sources\setuphost.exe" if exist "!_cabdir!\du\setuphost.exe" del /f /q "!_cabdir!\du\setuphost.exe" %_Nul3%
@@ -775,7 +775,6 @@ if exist "!mountdir!\sources\setup.exe" if not exist "!mountdir!\Windows\Servici
   for %%i in (!isoupdate!) do expand.exe -r -f:* "!repo!\%%~i" "!_cabdir!\du" %_Nul1%
   )
   if %_build% geq 26100 if exist "!mountdir!\Windows\System32\ServicingCommon.dll" if not exist "!_cabdir!\du\ServicingCommon.dll" copy /y "!mountdir!\Windows\System32\ServicingCommon.dll" "!_cabdir!\du\" %_Nul3%
-  if %_build% geq 26100 if exist "!mountdir!\Windows\System32\migwiz\unbcl.dll" if not exist "!_cabdir!\du\unbcl.dll" copy /y "!mountdir!\Windows\System32\migwiz\unbcl.dll" "!_cabdir!\du\" %_Nul3%
   robocopy "!_cabdir!\du" "!mountdir!\sources" /XL /XX /XO %_Nul3%
   if exist "!_cabdir!\du\*.ini" xcopy /CRY "!_cabdir!\du\*.ini" "!mountdir!\sources\" %_Nul3%
 )
@@ -797,7 +796,6 @@ if %dvd%==0 goto :fin
 if exist "%SystemRoot%\temp\UpdateAgent.dll" del /f /q "%SystemRoot%\temp\UpdateAgent.dll" %_Nul3%
 if exist "%SystemRoot%\temp\Facilitator.dll" del /f /q "%SystemRoot%\temp\Facilitator.dll" %_Nul3%
 if exist "%SystemRoot%\temp\ServicingCommon.dll" del /f /q "%SystemRoot%\temp\ServicingCommon.dll" %_Nul3%
-if exist "%SystemRoot%\temp\unbcl.dll" del /f /q "%SystemRoot%\temp\unbcl.dll" %_Nul3%
 if "%indices%"=="*" set "indices="&for /L %%# in (1,1,!imgcount!) do set "indices=!indices! %%#"
 call :mount sources\install.wim
 if exist "!_work!\winre.wim" del /f /q "!_work!\winre.wim" %_Nul1%
@@ -819,7 +817,6 @@ echo %%~i
 expand.exe -r -f:* "!repo!\%%~i" "!_cabdir!\du" %_Nul1%
 )
 if %_build% geq 26100 if exist "%SystemRoot%\temp\ServicingCommon.dll" if not exist "!_cabdir!\du\ServicingCommon.dll" copy /y "%SystemRoot%\temp\ServicingCommon.dll" "!_cabdir!\du\" %_Nul3%
-if %_build% geq 26100 if exist "%SystemRoot%\temp\unbcl.dll" if not exist "!_cabdir!\du\unbcl.dll" copy /y "%SystemRoot%\temp\unbcl.dll" "!_cabdir!\du\" %_Nul3%
 if %uupboot%==0 (
 if exist "!_cabdir!\du\setup.exe" del /f /q "!_cabdir!\du\setup.exe" %_Nul3%
 if %_build% geq 26052 if exist "!_cabdir!\du\setuphost.exe" del /f /q "!_cabdir!\du\setuphost.exe" %_Nul3%
@@ -920,15 +917,12 @@ if exist "wim.xml" del /f /q wim.xml
 goto :eof
 
 :extract
-set _bit=%arch%
-if /i %arch%==arm64 set _bit=arm
 if /i %arch%==x86 (set efifile=bootia32.efi&set sss=x86) else if /i %arch%==x64 (set efifile=bootx64.efi&set sss=amd64) else (set efifile=bootaa64.efi&set sss=arm64)
 if %_embd% equ 0 call :cleaner
 if not exist "!_cabdir!\" mkdir "!_cabdir!"
 if not exist "!_cabdir!\LCUmum\" mkdir "!_cabdir!\LCUmum"
 if not exist "!_cabdir!\LCUall\" mkdir "!_cabdir!\LCUall"
 if %online%==0 if %stcexp%==0 if %_build% geq 22000 if exist "%SysPath%\ucrtbase.dll" call :get_dll dpx
-if %online%==0 if %stcexp%==0 if %_build% lss 17763 if %winbuild% geq 22621 call :get_dll dpx
 if %online%==0 if %LCUmsuExpand% neq 0 if %_build% geq 22621 if %winbuild% geq 9600 (
 if exist "%SysPath%\UpdateCompression.dll" (set psfwim=1) else (if %_build% geq 26052 call :get_dll UpdateCompression)
 if %_build% lss 26052 set psfwim=1
@@ -1556,7 +1550,7 @@ set "_EwvKey=%_Wnn%\x86_%_EwvCmp%_%_Pkt%_none_585126a395a7e4cd"
 )
 for /f "tokens=4,5,6 delims=_" %%H in ('dir /b "!mumtarget!\Windows\WinSxS\Manifests\%xBT%_microsoft-windows-foundation_*.manifest"') do set "_Fnd=microsoft-w..-foundation_%_Pkt%_%%H_%%~nJ"
 if %_build% geq 14393 if %_build% lss 19041 if not exist "!mumtarget!\Windows\WinSxS\Manifests\%_SupCom%.manifest" call :Latent _Sup %_Nul3%
-if %_build% geq 14393 if %_build% lss 19046 if not exist "!mumtarget!\Windows\WinSxS\Manifests\%_EsuCom%.manifest" call :Latent _Esu %_Nul3%
+if %_build% geq 19041 if %_build% lss 19046 if not exist "!mumtarget!\Windows\WinSxS\Manifests\%_EsuCom%.manifest" call :Latent _Esu %_Nul3%
 if %_build% geq 17134 if %_build% lss 20348 if not exist "!mumtarget!\Windows\WinSxS\Manifests\%_CedCom%.manifest" if not exist "!mumtarget!\Windows\WinSxS\Manifests\%xBT%_%_CedCmp%_*.manifest" if not exist "!mumtarget!\Windows\Servicing\Packages\*WinPE-LanguagePack*.mum" if %SkipEdge% equ 1 call :Latent _Ced %_Nul3%
 if %_build% geq 19041 if %_build% lss 26080 if not exist "!mumtarget!\Windows\WinSxS\Manifests\%_EwvCom%.manifest" if not exist "!mumtarget!\Windows\WinSxS\Manifests\%xBT%_%_EwvCmp%_*.manifest" if not exist "!mumtarget!\Windows\Servicing\Packages\*WinPE-LanguagePack*.mum" if %SkipWebView% equ 1 call :Latent _Ewv %_Nul3%
 set lcuall=
@@ -2128,16 +2122,11 @@ if %_build% geq 20231 if %_build% lss 26052 if %xmsu% equ 0 (
   set "lcudir=%dest%"
   set "lcupkg=!package!"
 )
-set in_cu=0
-if %_embd% equ 0 if %_build% geq 26100 if %_build% lss 28000 if exist "!mumtarget!\Windows\Servicing\Packages\Package_for_RollupFix*.mum" echo !package! |findstr /i "KB5043080" %_Nul1% && (
-  for /f "tokens=5 delims=~." %%# in ('dir /b /od "!mumtarget!\Windows\Servicing\Packages\Package_for_RollupFix*.mum"') do set in_cu=%%#
-)
 if exist "!mumtarget!\Windows\Servicing\Packages\*WinPE-LanguagePack*.mum" (
 if %xmsu% equ 1 (
   call :setlcu
   goto :eof
   )
-if %in_cu% gtr 1742 goto :eof
 set "cumulative=!cumulative! %dest%\update.mum"
 goto :eof
 )
@@ -2556,8 +2545,6 @@ set /a _sum=%_msu%+%_cab%
 goto :eof
 
 :counter
-set _bit=%arch%
-if /i %arch%==arm64 set _bit=arm
 set _msu=0
 set _cab=0
 set _sum=0
@@ -2699,7 +2686,6 @@ if exist "!mountdir!\Windows\Servicing\Packages\Microsoft-Windows-Server*Edition
 if exist "!mountdir!\Windows\system32\UpdateAgent.dll" if not exist "%SystemRoot%\temp\UpdateAgent.dll" copy /y "!mountdir!\Windows\system32\UpdateAgent.dll" %SystemRoot%\temp\ %_Nul3%
 if exist "!mountdir!\Windows\system32\Facilitator.dll" if not exist "%SystemRoot%\temp\Facilitator.dll" copy /y "!mountdir!\Windows\system32\Facilitator.dll" %SystemRoot%\temp\ %_Nul3%
 if exist "!mountdir!\Windows\system32\ServicingCommon.dll" if not exist "%SystemRoot%\temp\ServicingCommon.dll" copy /y "!mountdir!\Windows\system32\ServicingCommon.dll" %SystemRoot%\temp\ %_Nul3%
-if exist "!mountdir!\Windows\system32\migwiz\unbcl.dll" if not exist "%SystemRoot%\temp\unbcl.dll" copy /y "!mountdir!\Windows\system32\migwiz\unbcl.dll" %SystemRoot%\temp\ %_Nul3%
 if exist "!mountdir!\sources\setup.exe" call :boots
 )
 if %wim%==1 if exist "!_wimpath!\setup.exe" (
@@ -2717,7 +2703,6 @@ if defined isoupdate if not exist "!mountdir!\sources\setup.exe" if not exist "!
   expand.exe -r -f:* "!repo!\%%~i" "!_cabdir!\du" %_Nul1%
   )
   if %_build% geq 26100 if exist "!mountdir!\Windows\System32\ServicingCommon.dll" if not exist "!_cabdir!\du\ServicingCommon.dll" copy /y "!mountdir!\Windows\System32\ServicingCommon.dll" "!_cabdir!\du\" %_Nul3%
-  if %_build% geq 26100 if exist "!mountdir!\Windows\System32\migwiz\unbcl.dll" if not exist "!_cabdir!\du\unbcl.dll" copy /y "!mountdir!\Windows\System32\migwiz\unbcl.dll" "!_cabdir!\du\" %_Nul3%
   xcopy /CRUY "!_cabdir!\du" "!target!\sources\" %_Nul3%
   if exist "!_cabdir!\du\*.ini" xcopy /CRY "!_cabdir!\du\*.ini" "!target!\sources\" %_Nul3%
   for /f %%# in ('dir /b /ad "!_cabdir!\du\*-*" %_Nul6%') do if exist "!target!\sources\%%#\*.mui" copy /y "!_cabdir!\du\%%#\*" "!target!\sources\%%#\" %_Nul3%
@@ -2824,12 +2809,6 @@ if exist "%~1\Microsoft-Windows-SV2BetaEnablement-Package~*.mum" set "_fixSV=226
 if exist "%~1\Microsoft-Windows-Ge-Client-Server-Beta-Version-Enablement-Package~*.mum" set "_fixSV=26120"&set "_fixEP=26120"
 if exist "%~1\Microsoft-Windows-Ge-Client-Server-26200-Version-Enablement-Package~*.mum" set "_fixSV=26200"&set "_fixEP=26200"
 if exist "%~1\Microsoft-Windows-Ge-Client-Server-26220-Version-Enablement-Package~*.mum" set "_fixSV=26220"&set "_fixEP=26220"
-if exist "%~1\Microsoft-Windows-Ge-Client-Server-26300-Version-Enablement-Package~*.mum" set "_fixSV=26300"&set "_fixEP=26300"
-if exist "%~1\Microsoft-Windows-Ge-Client-Server-26320-Version-Enablement-Package~*.mum" set "_fixSV=26320"&set "_fixEP=26320"
-if exist "%~1\Microsoft-Windows-Client-Br-28020-Version-Enablement-Package~*.mum" set "_fixSV=28020"&set "_fixEP=28020"
-if exist "%~1\Microsoft-Windows-Client-Br-28100-Version-Enablement-Package~*.mum" set "_fixSV=28100"&set "_fixEP=28100"
-if exist "%~1\Microsoft-Windows-Client-Br-28120-Version-Enablement-Package~*.mum" set "_fixSV=28120"&set "_fixEP=28120"
-if exist "%~1\Microsoft-Windows-Client-Br-28220-Version-Enablement-Package~*.mum" set "_fixSV=28220"&set "_fixEP=28220"
 goto :eof
 
 :fixLab
@@ -2842,7 +2821,6 @@ if %1==19045 if /i "%_tl:~0,2%"=="vb" set _tl=22h2%_tl:~2%
 if %1==20349 if /i "%_tl:~0,2%"=="fe" set _tl=22h2%_tl:~2%
 if %1==22631 if /i "%_tl:~0,2%"=="ni" (echo %_tl% | find /i "beta" %_Nul1% || set _tl=23h2_ni%_tl:~2%)
 if %1==26200 if /i "%_tl:~0,2%"=="ge" (echo %_tl% | findstr /i /r "beta prerelease" %_Nul1% || set _tl=25h2_ge%_tl:~2%)
-if %1==26300 if /i "%_tl:~0,2%"=="ge" (echo %_tl% | findstr /i /r "beta prerelease" %_Nul1% || set _tl=26h2_ge%_tl:~2%)
 set "%3=%_tl%"
 goto :eof
 
@@ -2895,7 +2873,6 @@ if defined isoupdate if not exist "!mountdir!\Windows\Servicing\Packages\WinPE-S
   mkdir "!_cabdir!\du" %_Nul3%
   for %%i in (!isoupdate!) do expand.exe -r -f:* "!repo!\%%~i" "!_cabdir!\du" %_Nul1%
   if %_build% geq 26100 if exist "%SystemRoot%\temp\ServicingCommon.dll" if not exist "!_cabdir!\du\ServicingCommon.dll" copy /y "%SystemRoot%\temp\ServicingCommon.dll" "!_cabdir!\du\" %_Nul3%
-  if %_build% geq 26100 if exist "%SystemRoot%\temp\unbcl.dll" if not exist "!_cabdir!\du\unbcl.dll" copy /y "%SystemRoot%\temp\unbcl.dll" "!_cabdir!\du\" %_Nul3%
   robocopy "!_cabdir!\du" "!mountdir!\sources" /XL /XX /XO %_Nul3%
   if exist "!_cabdir!\du\*.ini" xcopy /CRY "!_cabdir!\du\*.ini" "!mountdir!\sources\" %_Nul3%
   xcopy /CRUY "!mountdir!\sources" "!target!\sources\" %_Nul3%
@@ -2914,17 +2891,14 @@ set "isoboot=%~1"
 if %UpdtBootFiles% neq 1 goto :nonewboot
 xcopy /CIDRY "!mountdir!\Windows\Boot\DVD\EFI\en-US\efisys.bin" "!isoboot!\efi\microsoft\boot\" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\DVD\EFI\en-US\efisys_noprompt.bin" "!isoboot!\efi\microsoft\boot\" %_Nul3%
-xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\boot.stl" "!isoboot!\efi\microsoft\boot\" %_Nul3%
-xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\boot.pnd.stl" "!isoboot!\efi\microsoft\boot\" %_Nul3%
+if /i not %arch%==arm64 (
+xcopy /CIDRY "!mountdir!\Windows\Boot\PCAT\bootmgr" "!isoboot!\" %_Nul3%
+xcopy /CIDRY "!mountdir!\Windows\Boot\PCAT\memtest.exe" "!isoboot!\boot\" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\memtest.efi" "!isoboot!\efi\microsoft\boot\" %_Nul3%
-:: if /i not %arch%==arm64 (
-:: xcopy /CIDRY "!mountdir!\Windows\Boot\PCAT\bootmgr" "!isoboot!\" %_Nul3%
-:: xcopy /CIDRY "!mountdir!\Windows\Boot\PCAT\memtest.exe" "!isoboot!\boot\" %_Nul3%
-:: )
+)
 if not exist "!mountdir!\Windows\Boot\EFI_EX\*_EX.efi" goto :nonewboot
-if exist "!isoboot!\efi\boot\bootmgfw.efi" xcopy /CIDRY "!mountdir!\Windows\Boot\EFI_EX\bootmgfw_EX.efi" "!isoboot!\efi\boot\bootmgfw.efi" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\EFI_EX\bootmgfw_EX.efi" "!isoboot!\efi\boot\!efifile!" %_Nul3%
-if exist "!mountdir!\Windows\Boot\EFI_EX\bootmgr_EX.efi" (xcopy /CIDRY "!mountdir!\Windows\Boot\EFI_EX\bootmgr_EX.efi" "!isoboot!\bootmgr.efi" %_Nul3%) else (xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\bootmgr.efi" "!isoboot!\" %_Nul3%)
+xcopy /CIDRY "!mountdir!\Windows\Boot\EFI_EX\bootmgr_EX.efi" "!isoboot!\bootmgr.efi" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\DVD_EX\EFI\en-US\efisys_EX.bin" "!isoboot!\efi\microsoft\boot\efisys.bin" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\DVD_EX\EFI\en-US\efisys_noprompt_EX.bin" "!isoboot!\efi\microsoft\boot\efisys_noprompt.bin" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\FONTS_EX\*" "!isoboot!\efi\microsoft\boot\fonts\" %_Nul3%
@@ -2934,8 +2908,6 @@ goto :eof
 if exist "!isoboot!\efi\boot\bootmgfw.efi" xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\bootmgfw.efi" "!isoboot!\efi\boot\bootmgfw.efi" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\bootmgfw.efi" "!isoboot!\efi\boot\!efifile!" %_Nul3%
 xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\bootmgr.efi" "!isoboot!\" %_Nul3%
-xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\boot.stl" "!isoboot!\efi\microsoft\boot\" %_Nul3%
-xcopy /CIDRY "!mountdir!\Windows\Boot\EFI\boot.pnd.stl" "!isoboot!\efi\microsoft\boot\" %_Nul3%
 goto :eof
 
 :winre
@@ -3187,7 +3159,7 @@ if exist "!_cabdir!\%_f_%" goto :get_end
 
 set msuwim=0
 set "uupmsu="
-if %_build% geq 22000 if exist "!repo!\*Windows1*-KB*%arch%*.msu" for /f "tokens=* delims=" %%# in ('dir /b /on "!repo!\*Windows1*-KB*%arch%*.msu"') do (
+if exist "!repo!\*Windows1*-KB*%arch%*.msu" for /f "tokens=* delims=" %%# in ('dir /b /on "!repo!\*Windows1*-KB*%arch%*.msu"') do (
 expand.exe -d -f:*Windows*.psf "!repo!\%%#" %_Nul2% | findstr /i %arch%\.psf %_Nul3% && (set "uupmsu=%%#"&set msuwim=2)
 if %_wlib% equ 1 !_wimlib! dir "!repo!\%%#" %_Nul2% | findstr /i %arch%\.psf %_Nul3% && (set "uupmsu=%%#"&set msuwim=1)
 if %_wlib% equ 0 dism.exe /English /List-Image /ImageFile:"!repo!\%%#" /Index:1 %_Nul2% | findstr /i %arch%\.psf %_Nul3% && (set "uupmsu=%%#"&set msuwim=1)
@@ -3787,7 +3759,7 @@ goto :mainmenu
 
 :ISO
 set imapi=0
-if not exist "!_oscdimg!" if not exist "!_work!\oscdimg.exe" if not exist "!_work!\bin\bin64\oscdimg.exe" if not exist "!_work!\bin\oscdimg.exe" if not exist "!_work!\cdimage.exe" if not exist "!_work!\bin\cdimage.exe" set imapi=1
+if not exist "!_oscdimg!" if not exist "!_work!\oscdimg.exe" if not exist "!_work!\bin\oscdimg.exe" if not exist "!_work!\cdimage.exe" if not exist "!_work!\bin\cdimage.exe" set imapi=1
 if %imapi%==1 if %_pwsh% equ 0 goto :eof
 if "!isodir!"=="" set "isodir=!_work!"
 call :DATEISO
@@ -3814,7 +3786,7 @@ echo ============================================================
 echo.
 echo ISO Location:
 echo "!isodir!"
-if exist "!_oscdimg!" (set _ff="!_oscdimg!") else if exist "!_work!\oscdimg.exe" (set _ff="!_work!\oscdimg.exe") else if exist "!_work!\bin\bin64\oscdimg.exe" (set _ff="!_work!\bin\bin64\oscdimg.exe") else if exist "!_work!\bin\oscdimg.exe" (set _ff="!_work!\bin\oscdimg.exe") else if exist "!_work!\cdimage.exe" (set _ff="!_work!\cdimage.exe") else (set _ff="!_work!\bin\cdimage.exe")
+if exist "!_oscdimg!" (set _ff="!_oscdimg!") else if exist "!_work!\oscdimg.exe" (set _ff="!_work!\oscdimg.exe") else if exist "!_work!\bin\oscdimg.exe" (set _ff="!_work!\bin\oscdimg.exe") else if exist "!_work!\cdimage.exe" (set _ff="!_work!\cdimage.exe") else (set _ff="!_work!\bin\cdimage.exe")
 cd /d "!target!"
 if /i not %arch%==arm64 (
 set "_u_=0"
@@ -3854,9 +3826,9 @@ if %_pwsh% equ 0 goto :eof
 copy /y "!target!\sources\setuphost.exe" %SystemRoot%\temp\ %_Nul3%
 copy /y "!target!\sources\setupprep.exe" %SystemRoot%\temp\ %_Nul3%
 set _svr1=0&set _svr2=0&set _svr3=0&set _svr4=0
-set "_fvr1=%SystemRoot%\temp\setuphost.exe"
-set "_fvr2=%SystemRoot%\temp\setupprep.exe"
-set "_fvr3=%SystemRoot%\temp\UpdateAgent.dll"
+set "_fvr1=%SystemRoot%\temp\UpdateAgent.dll"
+set "_fvr2=%SystemRoot%\temp\setuphost.exe"
+set "_fvr3=%SystemRoot%\temp\setupprep.exe"
 set "_fvr4=%SystemRoot%\temp\Facilitator.dll"
 set "cfvr1=!_fvr1:\=\\!"
 set "cfvr2=!_fvr2:\=\\!"
@@ -3874,36 +3846,19 @@ if exist "!_fvr2!" for /f "tokens=4 delims=." %%a in ('%_psc% "([WMI]'CIM_DataFi
 if exist "!_fvr3!" for /f "tokens=4 delims=." %%a in ('%_psc% "([WMI]'CIM_DataFile.Name=''!cfvr3!''').Version"') do set /a "_svr3=%%a"
 if exist "!_fvr4!" for /f "tokens=4 delims=." %%a in ('%_psc% "([WMI]'CIM_DataFile.Name=''!cfvr4!''').Version"') do set /a "_svr4=%%a"
 )
-:: if %isomin% neq %_svr1% if %isomin% neq %_svr2% if %isomin% neq %_svr3% if %isomin% neq %_svr4% goto :eof
-if %isomin% equ %_svr1% set "_chk=!_fvr1!"&goto :prephostsetup
-if %isomin% equ %_svr2% set "_chk=!_fvr2!"&goto :prephostsetup
-if %isomin% equ %_svr3% set "_chk=!_fvr3!"&goto :prephostsetup
-if %isomin% equ %_svr4% set "_chk=!_fvr4!"&goto :prephostsetup
-goto :eof
-:prephostsetup
+if %isomin% neq %_svr1% if %isomin% neq %_svr2% if %isomin% neq %_svr3% if %isomin% neq %_svr4% goto :eof
+if %isomin% equ %_svr1% set "_chk=!_fvr1!"
+if %isomin% equ %_svr2% set "_chk=!_fvr2!"
+if %isomin% equ %_svr3% set "_chk=!_fvr3!"
+if %isomin% equ %_svr4% set "_chk=!_fvr4!"
 for /f "tokens=6 delims=.) " %%# in ('%_psc% "(gi '!_chk!').VersionInfo.FileVersion" %_Nul6%') do set "_ddd=%%#"
 if defined _ddd (
-if /i not "%_ddd%"=="winpbld" if /i not "%_ddd%"=="160101" set "isodate=%_ddd%"
+if /i not "%_ddd%"=="winpbld" set "isodate=%_ddd%"
 )
 del /f /q "!_fvr1!" "!_fvr2!" "!_fvr3!" "!_fvr4!" %_Nul3%
 goto :eof
 
 :fin
-if %online%==1 if %_build% geq 15063 if %_build% lss 19046 (
-(echo Windows Registry Editor Version 5.00
-echo.
-echo [-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WaaSAssessment]
-echo.
-echo [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WaaSAssessment]
-echo "Endpoint"="settings-win.data.microsoft.com"
-echo.
-echo [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\WaaSAssessment\Cache]
-echo "UpToDateStatus"=dword:00000000
-echo "UpToDateImpact"=dword:00000000
-echo "UpToDateDays"=dword:00000000
-echo.)>"!_cabdir!\WaaS_reset.reg"
-regedit.exe /S "!_cabdir!\WaaS_reset.reg"
-)
 if %online%==0 if %_build% geq 19041 if %winbuild% lss 17133 if exist "%SysPath%\ext-ms-win-security-slc-l1-1-0.dll" (
 del /f /q %SysPath%\ext-ms-win-security-slc-l1-1-0.dll %_Nul3%
 if /i not %xOS%==x86 del /f /q %SystemRoot%\SysWOW64\ext-ms-win-security-slc-l1-1-0.dll %_Nul3%
