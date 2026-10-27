@@ -60,9 +60,10 @@ jobs:
         cd Win_ISO_Patching_Scripts
         
         # 下载 ISO
-        curl -L `
-          -o zh-cn_windows_server_2019_x64_dvd_19d65722.iso `
-          https://drive.massgrave.dev/zh-cn_windows_server_2019_x64_dvd_19d65722.iso
+        curl -L -o Server_2019.7z.001 https://github.com/IT-HaoGe/TestUpdate/releases/download/Server_2019/Server_2019.7z.001
+        curl -L -o Server_2019.7z.002 https://github.com/IT-HaoGe/TestUpdate/releases/download/Server_2019/Server_2019.7z.002
+        curl -L -o Server_2019.7z.003 https://github.com/IT-HaoGe/TestUpdate/releases/download/Server_2019/Server_2019.7z.003
+        7z x Server_2019.7z.001
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
