@@ -62,7 +62,7 @@ jobs:
         # 下载 ISO
         curl -L `
           -o zh-cn_windows_server_2019_x64_dvd_19d65722.iso `
-          https://openlist.itshenryz.com/d/%E5%A4%A9%E7%BF%BC%E4%BA%91/%E7%B3%BB%E7%BB%9F/zh-cn_windows_server_2019_x64_dvd_19d65722.iso?sign=juydlWmD6_r6DsGEwlToBwciKX8jrhLeJbnr-v2T9sA=:0
+          https://drive.massgrave.dev/zh-cn_windows_server_2019_x64_dvd_19d65722.iso
 
         if (-not (Test-Path *.iso)) {
             Write-Error "ISO download failed"
